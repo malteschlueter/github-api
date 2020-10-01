@@ -1,0 +1,50 @@
+paths:
+    - ./src
+exclude_files:
+    - .*test.*
+layers:
+    -
+        name: Command
+        collectors:
+            -
+                type: className
+                regex: App\\Command\\
+    -
+        name: Domain
+        collectors:
+            -
+                type: className
+                regex: App\\Domain\\
+    -
+        name: Dto
+        collectors:
+            -
+                type: className
+                regex: App\\Dto\\
+    -
+        name: 'Symfony\Component\Console\'
+        collectors:
+            -
+                type: className
+                regex: Symfony\\Component\\Console\\
+    -
+        name: 'Symfony\Component\Serializer\'
+        collectors:
+            -
+                type: className
+                regex: Symfony\\Component\\Serializer\\
+    -
+        name: 'Symfony\Contracts\HttpClient\'
+        collectors:
+            -
+                type: className
+                regex: Symfony\\Contracts\\HttpClient\\
+ruleset:
+    Command:
+        - Domain
+        - Dto
+        - 'Symfony\Component\Console\'
+    Domain:
+        - Dto
+        - 'Symfony\Component\Serializer\'
+        - 'Symfony\Contracts\HttpClient\'
