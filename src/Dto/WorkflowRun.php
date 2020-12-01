@@ -13,5 +13,5 @@ class WorkflowRun
     public string $headBranch;
     public int $runNumber;
     public string $status;
-    public string $conclusion;
+    public ?string $conclusion;
 }
