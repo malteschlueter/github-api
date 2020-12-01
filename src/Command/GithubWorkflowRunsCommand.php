@@ -58,7 +58,7 @@ class GithubWorkflowRunsCommand extends Command
 
         do {
             try {
-                $workflowRuns = $this->getWorkflowRuns->get($repositoryName, $page);
+                $workflowRunCollection = $this->getWorkflowRuns->get($repositoryName, $page);
             } catch (ApiException $exception) {
                 $io->error('Did you registered a correct personal access token?');
                 $io->text('Please check your configuration.');
@@ -66,7 +66,7 @@ class GithubWorkflowRunsCommand extends Command
                 return Command::FAILURE;
             }
 
-            if (empty($workflowRuns->workflowRuns)) {
+            if (empty($workflowRunCollection->workflowRuns)) {
                 break;
             }
 
@@ -84,11 +84,11 @@ class GithubWorkflowRunsCommand extends Command
                         $workflowRun->status,
                         $workflowRun->conclusion,
                     ];
-                }, $workflowRuns->workflowRuns)
+                }, $workflowRunCollection->workflowRuns)
             );
         } while (++$page);
 
-        $io->writeln(sprintf('Total Workflow runs: %s', $workflowRuns->totalCount));
+        $io->writeln(sprintf('Total Workflow runs: %s', $workflowRunCollection->totalCount));
 
         return Command::SUCCESS;
     }

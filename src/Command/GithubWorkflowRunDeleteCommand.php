@@ -64,7 +64,7 @@ class GithubWorkflowRunDeleteCommand extends Command
 
         do {
             try {
-                $workflowRuns = $this->getWorkflowRuns->get($repositoryName, $page);
+                $workflowRunCollection = $this->getWorkflowRuns->get($repositoryName, $page);
             } catch (ApiException $exception) {
                 $io->error('Did you registered a correct personal access token?');
                 $io->text('Please check your configuration.');
@@ -72,11 +72,11 @@ class GithubWorkflowRunDeleteCommand extends Command
                 return Command::FAILURE;
             }
 
-            if (empty($workflowRuns->workflowRuns)) {
+            if (empty($workflowRunCollection->workflowRuns)) {
                 break;
             }
 
-            foreach ($workflowRuns->workflowRuns as $workflowRun) {
+            foreach ($workflowRunCollection->workflowRuns as $workflowRun) {
                 $this->deleteWorkflowRun->delete($repositoryName, $workflowRun->id);
                 ++$deletedWorkflowRuns;
             }

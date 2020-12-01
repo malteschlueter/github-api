@@ -52,14 +52,14 @@ class GetWorkflowRuns
             throw new ApiException('Can\'t get workflow runs.');
         }
 
-        /** @var WorkflowRunCollection $workflowRuns */
-        $workflowRuns = $this->serializer->deserialize(
+        /** @var WorkflowRunCollection $workflowRunCollection */
+        $workflowRunCollection = $this->serializer->deserialize(
             $response->getContent(),
             WorkflowRunCollection::class,
             JsonEncoder::FORMAT
         );
 
-        return $workflowRuns;
+        return $workflowRunCollection;
     }
 
     private function getApiUrl(string $repositoryName): string
