@@ -65,17 +65,14 @@
     "psr/log": {
         "version": "1.1.3"
     },
-    "sensiolabs-de/deptrac-shim": {
+    "qossmic/deptrac-shim": {
         "version": "0.7",
         "recipe": {
             "repo": "github.com/symfony/recipes-contrib",
             "branch": "master",
             "version": "0.7",
-            "ref": "1f7e6648916732a736466ccf2caa5b4b4e7f4968"
-        },
-        "files": [
-            "depfile.yaml"
-        ]
+            "ref": "2d7d934257e33fd83c72f5da5b5b1393efa7e0c6"
+        }
     },
     "symfony/cache": {
         "version": "v5.1.6"

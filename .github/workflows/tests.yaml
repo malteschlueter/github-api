@@ -1,13 +1,20 @@
 name: Tests
 
+env:
+    php_version: '8.0'
+
 on:
-    push:
     pull_request:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-18.04
         steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ env.php_version }}
+
             -   uses: actions/checkout@v2
 
             -   name: Validate composer.json and composer.lock
@@ -26,95 +33,162 @@ jobs:
                 if: steps.composer-cache.outputs.cache-hit != 'true'
                 run: composer install --prefer-dist --no-progress --no-suggest
 
+            -   run: php bin/console cache:clear
+
             -   name: Archive application
-                run: >
-                    cd ..
-                    && tar -czf github-api.tar.gz --exclude=".git" github-api
-                    && mv github-api.tar.gz github-api/github-api.tar.gz
+                working-directory: ../
+                run: |
+                    tar -czf application.tar.gz --exclude=".git" --exclude="node_modules" -C ${{ github.workspace }} .
+                    mv application.tar.gz ${{ github.workspace }}/
 
             -   name: Upload prepared application
                 uses: actions/upload-artifact@v2
                 with:
                     name: applicationArchive
-                    path: github-api.tar.gz
+                    path: application.tar.gz
+                    if-no-files-found: error
+                    retention-days: 1
 
     deptrac:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-18.04
         needs: build
         steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ env.php_version }}
+
             -   name: Download prepared application
                 uses: actions/download-artifact@v2
                 with:
                     name: applicationArchive
 
             -   name: Unpack application
-                run: tar -xzf github-api.tar.gz --strip=1
+                run: tar -xzf application.tar.gz --strip=1
 
             -   name: Run deptrac
-                run: php vendor/bin/deptrac analyze --fail-on-uncovered --formatter-github-actions=true
+                run: php vendor/bin/deptrac --fail-on-uncovered --report-uncovered
 
     lint:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-18.04
         needs: build
         steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ env.php_version }}
+
             -   name: Download prepared application
                 uses: actions/download-artifact@v2
                 with:
                     name: applicationArchive
 
             -   name: Unpack application
-                run: tar -xzf github-api.tar.gz --strip=1
+                run: tar -xzf application.tar.gz --strip=1
 
             -   name: Validate container
                 run: php bin/console lint:container
 
             -   name: Validate yaml files
-                run: php bin/console lint:yaml config
+                run: php bin/console lint:yaml config --parse-tags
 
     php-cs-fixer:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-18.04
         needs: build
         steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ env.php_version }}
+
             -   name: Download prepared application
                 uses: actions/download-artifact@v2
                 with:
                     name: applicationArchive
 
             -   name: Unpack application
-                run: tar -xzf github-api.tar.gz --strip=1
+                run: tar -xzf application.tar.gz --strip=1
+
+            -   name: Setup php-cs-fixer
+                run: composer global require friendsofphp/php-cs-fixer
 
             -   name: Run php-cs-fixer
-                run: php vendor/bin/php-cs-fixer fix --diff --dry-run
+                run: php-cs-fixer fix --dry-run
 
     phpstan:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-18.04
         needs: build
         steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ env.php_version }}
+
             -   name: Download prepared application
                 uses: actions/download-artifact@v2
                 with:
                     name: applicationArchive
 
             -   name: Unpack application
-                run: tar -xzf github-api.tar.gz --strip=1
+                run: tar -xzf application.tar.gz --strip=1
 
             -   name: Run phpstan
-                run: php vendor/bin/phpstan analyze --error-format=github
+                run: php vendor/bin/phpstan analyze
+
+#    phpunit:
+#        runs-on: ubuntu-18.04
+#        needs: build
+#        steps:
+#            -   name: Setup PHP
+#                uses: shivammathur/setup-php@v2
+#                with:
+#                    php-version: ${{ env.php_version }}
+#
+#            -   name: Download prepared application
+#                uses: actions/download-artifact@v2
+#                with:
+#                    name: applicationArchive
+#
+#            -   name: Unpack application
+#                run: tar -xzf application.tar.gz --strip=1
+#
+#            -   name: Run phpunit
+#                run: php bin/phpunit
 
     psalm:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-18.04
         needs: build
         steps:
+            -   name: Setup PHP
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: ${{ env.php_version }}
+
             -   name: Download prepared application
                 uses: actions/download-artifact@v2
                 with:
                     name: applicationArchive
 
             -   name: Unpack application
-                run: tar -xzf github-api.tar.gz --strip=1
-
-            -   name: Clear cache
-                run: php bin/console cache:clear
+                run: tar -xzf application.tar.gz --strip=1
 
             -   name: Run psalm
-                run: php vendor/bin/psalm.phar --output-format=github
+                run: php vendor/bin/psalm.phar
+
+    cleanup:
+        runs-on: ubuntu-latest
+        needs:
+            - build
+            - deptrac
+            - lint
+            - php-cs-fixer
+            - phpstan
+#            - phpunit
+            - psalm
+        if: ${{ always() }}
+        steps:
+            -   name: Delete unecessary artifacts
+                uses: geekyeggo/delete-artifact@v1
+                with:
+                    name: applicationArchive
+                    failOnError: false
